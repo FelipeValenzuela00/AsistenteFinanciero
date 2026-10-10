@@ -4,7 +4,7 @@
 > transacciones y transferencias en ARS y USD, con saldos siempre consistentes y un dashboard en tiempo real.
 > Diseñada para recibir movimientos por WhatsApp/Telegram y categorizarlos con IA.
 
-Proyecto desarrollado por **Felipe Valenzuela** y **Diego Scoppetta**. Este repositorio es una **vitrina**:
+Proyecto desarrollado por **Felipe Valenzuela** y **Diego Scopetta**. Este repositorio es una **vitrina**:
 documenta el producto, la arquitectura y las decisiones técnicas. El código fuente vive en repositorios privados.
 
 > 🎬 **Video demo, GIF y capturas: próximamente.** El material multimedia se va a ir sumando a medida que se
@@ -145,7 +145,7 @@ Somos dos desarrolladores. La forma de repartirnos el trabajo evolucionó con el
 2. **Etapa actual — por features de punta a punta.** Cada uno es dueño de una funcionalidad completa, desde la base
    de datos hasta la interfaz, incluidos sus tests y su documentación.
 
-| | Felipe Valenzuela | Diego Scoppetta |
+| | Felipe Valenzuela | Diego Scopetta |
 |---|---|---|
 | **Etapa por capas** | Backend: arquitectura Clean Architecture, API, modelo de datos, multi-tenancy, auth, CI/CD | Frontend: SPA en React, integración con Clerk, UI |
 | **Etapa por features** | **Saldos y transferencias**: saldos consistentes con bloqueo de filas, transferencias atómicas entre monedas, ajustes auditables, filtros del dashboard | **Cuarentena**: bandeja de entrada de movimientos y su revisión y aprobación |
