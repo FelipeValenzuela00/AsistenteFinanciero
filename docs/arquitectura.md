@@ -50,7 +50,7 @@ sequenceDiagram
 
     UI->>JWT: Authorization: Bearer <token de Clerk>
     JWT->>JWT: Valida firma (JWKS cacheado), issuer, audience, expiración
-    JWT->>DB: Busca el tenant por la organización de Clerk (lo crea la primera vez; rol de sistema)
+    JWT->>DB: Busca el tenant por la organización de Clerk (la crea la primera vez, con el rol de sistema)
     JWT->>JWT: Agrega los claims tenant_id, user_id y rol
     JWT->>C: Usuario autenticado
     C->>S: DTO validado
