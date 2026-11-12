@@ -1,6 +1,14 @@
 # 0002 — Adapter de IA provider-agnostic
 
-**Estado:** aceptada · interfaz y proveedor mock implementados; Gemini planificado
+**Estado:** aceptada · implementada (proveedor de producción en evaluación)
+
+> **Actualización (noviembre de 2026).** La implementación quedó más simple que el diseño de abajo: la interfaz
+> tiene un solo método (`GenerateAsync`) y hay tres adapters: `AnthropicProvider`, `OpenAiCompatibleProvider` (que
+> cubre Gemini, NVIDIA NIM, OpenAI y Ollama con solo cambiar URL y modelo) y `MockAiProvider` para tests. El proveedor
+> se elige por configuración para toda la instalación (fábrica `AiProviders.Create`), no por tenant, y el presupuesto
+> de IA es un tope global con contador por tenant. La IA se usa en el asistente (registrar movimientos y responder
+> consultas); lo que registra va a la cuarentena, donde cuenta y categoría se asignan por coincidencia de nombres.
+> El principio central sigue: la IA sugiere y el usuario aprueba.
 
 ## Contexto
 

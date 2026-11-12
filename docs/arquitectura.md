@@ -44,19 +44,17 @@ sequenceDiagram
     autonumber
     participant UI as React SPA
     participant JWT as JwtBearer
-    participant TR as TenantResolver
     participant C as Controller
     participant S as Servicio
     participant DB as PostgreSQL
 
     UI->>JWT: Authorization: Bearer <token de Clerk>
     JWT->>JWT: Valida firma (JWKS cacheado), issuer, audience, expiración
-    JWT->>JWT: Mapea la organización de Clerk → org_id y el rol → Role
-    JWT->>TR: Usuario autenticado
-    TR->>DB: Busca el tenant por org_id (lo crea si es la primera vez)
-    TR->>DB: SET app.current_tenant_id
-    TR->>C: Request con TenantId
+    JWT->>DB: Busca el tenant por la organización de Clerk (lo crea la primera vez; rol de sistema)
+    JWT->>JWT: Agrega los claims tenant_id, user_id y rol
+    JWT->>C: Usuario autenticado
     C->>S: DTO validado
+    S->>DB: Al abrir la conexión, el interceptor fija app.current_tenant_id
     S->>DB: Consultas filtradas por TenantId (+ políticas RLS)
     S-->>C: Resultado
     C-->>UI: { success, data, meta? } o { success:false, error }
@@ -72,7 +70,7 @@ sequenceDiagram
 flowchart LR
     T1["Org A (token)"] --> MW
     T2["Org B (token)"] --> MW
-    MW["TenantResolver<br/>SET app.current_tenant_id"] --> Q["Consulta"]
+    MW["Interceptor de EF Core<br/>set_config(app.current_tenant_id)"] --> Q["Consulta"]
     Q --> P{"Política RLS<br/>tenantId = current_setting(...)"}
     P -->|filas de A| RA["Datos de A"]
     P -->|filas de B| RB["Datos de B"]
@@ -83,8 +81,9 @@ Defensa en profundidad con dos capas:
 1. **Aplicación**: cada servicio filtra por `TenantId`; un recurso de otra organización responde 404 (no 403, para
    no revelar que existe).
 2. **Base de datos**: todas las tablas con datos de clientes tienen políticas RLS por `tenantId`.
-   _Estado: las políticas están definidas; activar su enforcement (rol de base sin privilegios de dueño,
-   `FORCE ROW LEVEL SECURITY` y `SET LOCAL` por transacción) es parte de la fase de seguridad en curso._
+   La API se conecta con un rol sin privilegios de dueño (`af_app`), las tablas tienen `FORCE ROW LEVEL SECURITY`
+   y un interceptor de EF Core fija el tenant del token en cada conexión. Los flujos de sistema (login de Clerk,
+   webhooks) usan un rol aparte con `BYPASSRLS`.
 
 Ver la decisión [0001](decisiones/0001-multi-tenancy-con-rls.md).
 
@@ -138,40 +137,39 @@ classDiagram
     class IAiProvider {
         <<interface>>
         +ProviderName string
-        +CompleteAsync(request) AiResponse
-        +EstimateCostAsync(request) decimal
-        +HealthCheckAsync() bool
+        +GenerateAsync(request) AiCompletion
     }
-    class GeminiProvider
-    class OpenAiProvider
-    class OllamaProvider
+    class AnthropicProvider
+    class OpenAiCompatibleProvider
     class MockAiProvider
-    class AiProviderRegistry {
-        +Register(provider)
-        +CreateForTenant(tenant) IAiProvider
+    class AiProviders {
+        <<factory>>
+        +Create(AiOptions) IAiProvider
     }
-    IAiProvider <|.. GeminiProvider
-    IAiProvider <|.. OpenAiProvider
-    IAiProvider <|.. OllamaProvider
+    IAiProvider <|.. AnthropicProvider
+    IAiProvider <|.. OpenAiCompatibleProvider
     IAiProvider <|.. MockAiProvider
-    AiProviderRegistry o-- IAiProvider
+    AiProviders ..> IAiProvider
 ```
+
+`OpenAiCompatibleProvider` cubre cualquier servidor con la API `/chat/completions` (Gemini, NVIDIA NIM, OpenAI,
+Ollama): cambiar de modelo es cambiar `Ai:BaseUrl` y `Ai:Model`, sin código nuevo.
 
 ```mermaid
 flowchart LR
-    M["Mensaje de WhatsApp/Telegram"] --> MK["Make.com<br/>extrae JSON"]
-    MK --> W["POST webhook<br/>(idempotente por externalId)"]
-    W --> Q["Bandeja de cuarentena"]
-    Q --> IA["IAiProvider<br/>categoriza y sugiere cuenta"]
-    IA --> R{"¿Necesita revisión?"}
-    R -->|sí| U["Usuario revisa en la UI"]
+    CH["Asistente (chat)"] --> IA["IAiProvider<br/>interpreta el mensaje"]
+    IA --> Q["Bandeja de cuarentena"]
+    CSV["CSV / extracto de<br/>Mercado Pago"] --> Q
+    MK["WhatsApp/Telegram<br/>vía Make.com (en curso)"] --> W["POST webhook<br/>(idempotente por externalId)"] --> Q
+    Q --> MT["Asigna cuenta y categoría<br/>por coincidencia de nombres"]
+    MT --> R{"¿Necesita revisión?"}
+    R -->|sí| U["Usuario revisa y corrige"]
     R -->|no| A
-    U --> A["Aprobación en lote<br/>(transacción ACID)"]
+    U --> A["Aprobación individual o en lote<br/>(transacción ACID)"]
     A --> TX["Transacciones + saldos"]
 ```
 
-_Estado: la interfaz `IAiProvider` y un proveedor mock determinístico (para tests) existen; el proveedor Gemini, el
-registro por tenant y la entrada por Make.com están planificados._ Ver la decisión
+Ver la decisión
 [0002](decisiones/0002-adapter-ia-provider-agnostic.md).
 
 ## 7. Frontend

@@ -7,10 +7,9 @@
 Proyecto desarrollado por **Felipe Valenzuela** y **Diego Scopetta**. Este repositorio es una **vitrina**:
 documenta el producto, la arquitectura y las decisiones técnicas. El código fuente vive en repositorios privados.
 
-> 🎬 **Video demo, GIF y capturas: próximamente.** El material multimedia se va a ir sumando a medida que se
-> completen las fases de desarrollo en curso.
+![Dashboard de Asistente Financiero](docs/img/dashboard.gif)
 
-[Arquitectura](docs/arquitectura.md)  ·  [Decisiones técnicas](docs/decisiones/)  ·  [Calidad y testing](docs/calidad.md)
+[Demo](#demo)  ·  [Arquitectura](docs/arquitectura.md)  ·  [Decisiones técnicas](docs/decisiones/)  ·  [Calidad y testing](docs/calidad.md)
 
 ---
 
@@ -34,14 +33,59 @@ Una aplicación web multi-empresa (multi-tenant) donde cada organización:
 - **Organiza** con categorías jerárquicas, archivado y borrado lógico (nada se pierde).
 - **Entiende su situación** en un dashboard con ingresos, gastos, flujo neto, balance por cuenta, tendencia mensual
   y transacciones recientes editables.
+- **Registra hablando**: en el asistente se escribe en lenguaje natural («3500 de súper con la Visa y cobré 50 mil»)
+  y la **IA interpreta cada movimiento**; también responde consultas («¿en qué gastamos más este mes?») con los
+  datos de la empresa.
+- **Revisa antes de impactar**: lo que llega del asistente, de un CSV o del extracto de Mercado Pago queda en una
+  bandeja de **cuarentena**; al aprobarlo se convierte en transacción.
 
-Visión del producto (en desarrollo): los movimientos llegan por **WhatsApp/Telegram**, una **IA los interpreta y
-categoriza**, quedan en una bandeja de **cuarentena** para revisión y, al aprobarlos, se convierten en transacciones.
+Próximo paso: que los movimientos lleguen también por **WhatsApp/Telegram** (vía Make.com) a la misma bandeja.
 
-## Capturas
+## Demo
 
-> 🚧 **En preparación.** Las capturas del dashboard, de una transferencia entre monedas y del mensaje de saldo
-> insuficiente se agregan al cerrar las fases de desarrollo en curso (ver [docs/img](docs/img/README.md)).
+> Grabado sobre una empresa ficticia (**Pyme Demo SRL**) con datos de ejemplo: no hay datos reales de clientes.
+
+### Transferencias entre monedas
+
+El monto acreditado en pesos se calcula con la cotización USD/ARS del día; débito y crédito se registran como un par
+atómico.
+
+![Transferencia de USD a ARS](docs/img/transferencia-monedas.gif)
+
+### Saldos que siempre cierran
+
+Si un gasto dejaría una cuenta en rojo (y no es una tarjeta de crédito), el sistema lo rechaza y explica qué pasó y
+qué hacer.
+
+![Mensaje de saldo insuficiente](docs/img/saldo-insuficiente.gif)
+
+### Asistente con IA
+
+Preguntas en lenguaje natural que se responden con los datos reales de la empresa.
+
+![Asistente respondiendo en qué categorías se gastó más](docs/img/asistente-ia.gif)
+
+### Bandeja de cuarentena
+
+Los movimientos que llegan de afuera (CSV, extracto de Mercado Pago, webhook) se revisan antes de convertirse en
+transacciones.
+
+![Revisión y aprobación en la bandeja de cuarentena](docs/img/cuarentena.gif)
+
+<details>
+<summary><b>Más: cargar un gasto y confirmar un movimiento fijo</b></summary>
+
+### Registrar un gasto
+
+![Alta de una transacción](docs/img/nueva-transaccion.gif)
+
+### Gastos e ingresos fijos
+
+Cada mes vencido queda pendiente hasta que se confirma (se crea la transacción y se mueve el saldo) o se omite.
+
+![Confirmación de un movimiento fijo](docs/img/movimientos-fijos.gif)
+
+</details>
 
 ---
 
@@ -56,12 +100,16 @@ categoriza**, quedan en una bandeja de **cuarentena** para revisión y, al aprob
 | Saldos transaccionales, ajustes manuales auditables y transferencias atómicas | ✅ Funcionando |
 | Dashboard con filtros y transacciones recientes editables | ✅ Funcionando |
 | Contrato HTTP unificado + tests de contrato | ✅ Funcionando |
-| Aislamiento multi-tenant | ✅ Por servicio · 🚧 Enforcement de RLS en PostgreSQL |
-| Roles (Owner/Admin/Member/Viewer) | 🚧 En progreso |
-| Bandeja de cuarentena + categorización con IA (adapter provider-agnostic) | 🚧 Interfaz y proveedor mock; Gemini pendiente |
-| Entrada por WhatsApp/Telegram (Make.com) | 🗺 Planificado |
-| Cotización diaria automática desde el BCRA (worker) | 🗺 Planificado (hoy: cotización cargada en base) |
-| Exportación a Excel / Google Sheets con insights de IA | 🗺 Planificado |
+| Aislamiento multi-tenant (filtro por servicio + Row-Level Security forzado en PostgreSQL) | ✅ Funcionando |
+| Roles y permisos (Owner/Admin escriben, Member solo lee) | ✅ Funcionando · 🗺 Función de Viewer después de la beta |
+| Gastos e ingresos fijos (vencimientos pendientes, confirmar u omitir) | ✅ Funcionando |
+| Bandeja de cuarentena: webhook, importación CSV y extracto de Mercado Pago | ✅ Funcionando · 🚧 Aviso de posible duplicado |
+| Asistente con IA: registrar movimientos y consultar en lenguaje natural (adapter provider-agnostic) | ✅ Funcionando · 🚧 Elección del proveedor de producción |
+| Exportación a Google Sheets | ✅ Funcionando · 🚧 Reconexión de la cuenta de Google desde la interfaz |
+| Entrada por WhatsApp/Telegram (Make.com → webhook de la cuarentena) | 🚧 Webhook listo; escenario de Make en curso |
+| Cotización diaria automática desde el BCRA | 🗺 Planificado (hoy: cotización cargada en base) |
+| Importación desde Google Drive | 🗺 Después de la beta |
+| Beta en producción | 🗺 Diciembre de 2026 |
 
 ---
 
@@ -73,7 +121,7 @@ categoriza**, quedan en una bandeja de **cuarentena** para revisión y, al aprob
 | **Base de datos** | PostgreSQL 16, Row-Level Security para multi-tenancy, `decimal(18,2)` para montos, UUIDs |
 | **Frontend** | React 18, TypeScript, Vite, TanStack React Query, Tailwind CSS, arquitectura por componentes |
 | **Autenticación** | Clerk (organizaciones = tenants), validación JWT con `AddJwtBearer` + JWKS, webhooks firmados (Svix) |
-| **IA** | Patrón Adapter/Strategy (`IAiProvider`), Google Gemini como proveedor por defecto |
+| **IA** | Patrón Adapter (`IAiProvider`) con el proveedor elegido por configuración: Anthropic, cualquier endpoint compatible con OpenAI (Gemini, NVIDIA NIM, Ollama) o un mock para tests. Proveedor de producción en evaluación |
 | **Testing** | xUnit + Testcontainers (PostgreSQL real), tests de contrato HTTP, Vitest + Testing Library |
 | **DevOps** | Docker / Docker Compose, GitHub Actions (CI con migraciones y analizadores, CD a GHCR), guardas de ramas |
 
@@ -83,31 +131,30 @@ categoriza**, quedan en una bandeja de **cuarentena** para revisión y, al aprob
 flowchart LR
     subgraph Cliente
         UI["React SPA<br/>(Vite + React Query)"]
-        WA["WhatsApp / Telegram<br/>(planificado)"]
+        WA["WhatsApp / Telegram<br/>(en curso)"]
     end
 
     Clerk["Clerk<br/>(identidad y organizaciones)"]
 
     subgraph API["ASP.NET Core 8 API"]
         direction TB
-        Auth["JWT Bearer<br/>+ mapeo de claims"]
-        Tenant["TenantResolver<br/>middleware"]
+        Auth["JWT Bearer<br/>claims de Clerk → tenant_id"]
         Ctrl["Controllers<br/>(contrato unificado)"]
-        App["Servicios de aplicación<br/>saldos · transferencias · dashboard"]
-        AI["IAiProvider<br/>(adapter)"]
-        Auth --> Tenant --> Ctrl --> App
+        App["Servicios de aplicación<br/>saldos · transferencias · cuarentena"]
+        AI["IAiProvider<br/>(adapter del asistente)"]
+        Auth --> Ctrl --> App
         App --> AI
     end
 
     DB[("PostgreSQL<br/>RLS por tenant")]
-    Gemini["Gemini / OpenAI / Ollama"]
+    LLM["Anthropic o endpoint<br/>compatible con OpenAI<br/>(Gemini, NVIDIA NIM…)"]
 
     UI -- "Bearer JWT" --> Auth
     UI -. login .-> Clerk
     Clerk -- "webhooks firmados" --> Ctrl
     WA -. "Make.com" .-> Ctrl
-    App -- "EF Core<br/>transacciones ACID" --> DB
-    AI -.-> Gemini
+    App -- "EF Core + interceptor<br/>(tenant por conexión)" --> DB
+    AI -.-> LLM
 ```
 
 Más detalle (capas, flujo de una transacción, consistencia de saldos, multi-tenancy y adapter de IA) en

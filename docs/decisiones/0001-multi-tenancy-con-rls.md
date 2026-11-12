@@ -1,6 +1,12 @@
 # 0001 — Multi-tenancy en una sola base con Row-Level Security
 
-**Estado:** aceptada · aislamiento por servicio en producción; enforcement de RLS en curso
+**Estado:** aceptada · implementada (RLS forzado desde octubre de 2026)
+
+> **Actualización (noviembre de 2026).** La implementación final no usa un middleware `TenantResolver`: al validar
+> el JWT, un mapeador de claims resuelve el tenant desde la organización de Clerk (lo crea la primera vez, con un rol
+> de sistema que tiene `BYPASSRLS`) y lo agrega como claim `tenant_id`. Un interceptor de EF Core fija
+> `app.current_tenant_id` en cada conexión que abre la request. La API se conecta como un rol sin privilegios de
+> dueño y las tablas tienen `FORCE ROW LEVEL SECURITY`. El resto de la decisión sigue vigente.
 
 ## Contexto
 

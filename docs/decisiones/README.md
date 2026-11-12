@@ -6,8 +6,8 @@ Registro de decisiones de arquitectura: contexto, opciones, decisión y consecue
 
 | # | Decisión | Estado |
 |---|---|---|
-| [0001](0001-multi-tenancy-con-rls.md) | Multi-tenancy en una sola base con Row-Level Security | Aceptada · enforcement de RLS en curso |
-| [0002](0002-adapter-ia-provider-agnostic.md) | Adapter de IA provider-agnostic | Aceptada · Gemini planificado |
+| [0001](0001-multi-tenancy-con-rls.md) | Multi-tenancy en una sola base con Row-Level Security | Aceptada · implementada (RLS forzado) |
+| [0002](0002-adapter-ia-provider-agnostic.md) | Adapter de IA provider-agnostic | Aceptada · implementada (proveedor de producción en evaluación) |
 | [0003](0003-auth-gestionada-con-clerk.md) | Autenticación gestionada (Clerk) + validación JWT estándar | Implementada |
 | [0004](0004-precision-financiera-y-multimoneda.md) | Precisión financiera y multimoneda | Implementada |
 | [0005](0005-saldos-consistentes.md) | Saldos incrementales, atómicos y con bloqueo de filas | Implementada |
